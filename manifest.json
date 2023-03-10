@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Tabs Group Bookmarks",
+  "version": "0.1",
+  "description": "Save tabs groups to bookmark",
+
+  "icons": {
+    "512": "icons/512.png",
+    "256": "icons/256.png",
+    "128": "icons/128.png",
+    "48": "icons/48.png",
+    "16": "icons/16.png"
+  },
+
+  "permissions": ["tabs", "tabGroups", "bookmarks"],
+
+  "action": {
+    "default_popup": "popup/index.html"
+  }
+}
