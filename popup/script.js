@@ -15,7 +15,7 @@ const getData = (callback) => {
   }
 
   chrome.storage.local.get(['path']).then((result) => {
-    if (result.path) {
+    if (result?.path) {
       resData.rootPath = result.path
     }
     pathInput.value = resData.rootPath
@@ -86,18 +86,18 @@ const saveGroup = (tabGroupId, data) => {
   const selectedGroup = data.groupsArr.find((group) => group.id == tabGroupId)
   if (selectedTabs.length > 0) {
     getNewFolderId(selectedGroup.title, (id) => {
-      selectedTabs.forEach((tab) => {
+      for (let i = 0; selectedTabs.length > i; i++) {
         chrome.bookmarks.create(
           {
             parentId: id,
-            title: tab.title,
-            url: tab.url,
+            title: selectedTabs[i].title,
+            url: selectedTabs[i].url,
           },
           () => {
             showDone()
           },
         )
-      })
+      }
     })
   }
 }
@@ -139,17 +139,21 @@ getData((data) => {
   console.log(data)
 
   let groupsListHtml = ''
-  data.groupsArr.forEach((group) => {
-    groupsListHtml += `<div class="list__item js-save" data-groupId="${
-      group.id
-    }">${group.title ? group.title : 'NONAME'}</div>`
-  })
+  if (data.groupsArr && data.groupsArr.length > 0) {
+    for (let i = 0; data.groupsArr.length > i; i++) {
+      groupsListHtml += `<div class="list__item js-save" data-groupId="${
+        data.groupsArr[i].id
+      }">${data.groupsArr[i].title ? data.groupsArr[i].title : 'NONAME'}</div>`
+    }
+  }
   groupsListWrap.innerHTML = groupsListHtml
 
   let bookmarksListHtml = ''
-  data.bookmarksFoldersArr.forEach((bookmarksFolder) => {
-    bookmarksListHtml += `<div class="list__item js-load" data-folderId="${bookmarksFolder.id}">${bookmarksFolder.title}</div>`
-  })
+  if (data.bookmarksFoldersArr && data.bookmarksFoldersArr.length > 0) {
+    for (let i = 0; data.bookmarksFoldersArr.length > i; i++) {
+      bookmarksListHtml += `<div class="list__item js-load" data-folderId="${data.bookmarksFoldersArr[i].id}">${data.bookmarksFoldersArr[i].title}</div>`
+    }
+  }
   bookmarksListWrap.innerHTML = bookmarksListHtml
 
   body.addEventListener('click', (event) => {
