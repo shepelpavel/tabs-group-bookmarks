@@ -2,7 +2,7 @@ const body = document.getElementsByTagName('body')[0]
 const groupsListWrap = document.getElementsByClassName('groups')[0]
 const bookmarksListWrap = document.getElementsByClassName('bookmarks')[0]
 const settingsWrap = document.getElementsByClassName('settings')[0]
-const doneIcon = document.getElementsByClassName('done')[0]
+const doneBlock = document.getElementsByClassName('done')[0]
 const pathInput = document.getElementById('path')
 
 const getData = (callback) => {
@@ -102,6 +102,20 @@ const saveGroup = (tabGroupId, data) => {
   }
 }
 
+const closeGroup = (tabGroupId, data) => {
+  let tabsArr = []
+  chrome.tabs.query({}, (tabs) => {
+    tabs.map((tab) => {
+      if (tab.groupId == tabGroupId) {
+        tabsArr.push(tab.id)
+      }
+    })
+    chrome.tabs.remove(tabsArr, () => {
+      showDone()
+    })
+  })
+}
+
 const openGroup = (folderId, data) => {
   let tabsGroupArr = []
   targetFolderObj = data.bookmarksFoldersArr.find(
@@ -114,7 +128,13 @@ const openGroup = (folderId, data) => {
         tabsGroupArr.push(tab.id)
         if (targetFolderObj.children.length == i + 1) {
           chrome.tabs.group({ tabIds: tabsGroupArr }, (groupId) => {
-            chrome.tabGroups.update(groupId, { title: targetFolderObj.title })
+            chrome.tabGroups.update(
+              groupId,
+              { title: targetFolderObj.title },
+              () => {
+                showDone()
+              },
+            )
           })
         }
       },
@@ -123,65 +143,84 @@ const openGroup = (folderId, data) => {
 }
 
 const showDone = () => {
-  doneIcon.classList.add('show')
+  doneBlock.classList.remove('show')
+  doneBlock.classList.add('show')
+  initExt()
   setTimeout(() => {
-    doneIcon.classList.remove('show')
-  }, 1000)
+    doneBlock.classList.remove('show')
+  }, 300)
 }
 
 const saveRootPath = (path) => {
   chrome.storage.local.set({ path: path }).then(() => {
-    window.location.reload()
+    showDone()
   })
 }
 
-getData((data) => {
-  console.log(data)
-
-  let groupsListHtml = ''
-  if (data.groupsArr && data.groupsArr.length > 0) {
-    for (let i = 0; data.groupsArr.length > i; i++) {
-      groupsListHtml += `<div class="list__item js-save" data-groupId="${
-        data.groupsArr[i].id
-      }">${data.groupsArr[i].title ? data.groupsArr[i].title : 'NONAME'}</div>`
-    }
+const eventsList = (event) => {
+  var data = event.currentTarget.myData
+  if (event.target.classList.contains('js-save')) {
+    const groupId = event.target.getAttribute('data-groupId')
+    saveGroup(groupId, data)
   }
-  groupsListWrap.innerHTML = groupsListHtml
-
-  let bookmarksListHtml = ''
-  if (data.bookmarksFoldersArr && data.bookmarksFoldersArr.length > 0) {
-    for (let i = 0; data.bookmarksFoldersArr.length > i; i++) {
-      bookmarksListHtml += `<div class="list__item js-load" data-folderId="${data.bookmarksFoldersArr[i].id}">${data.bookmarksFoldersArr[i].title}</div>`
-    }
+  if (event.target.classList.contains('js-close')) {
+    const groupId = event.target.getAttribute('data-groupId')
+    closeGroup(groupId, data)
   }
-  bookmarksListWrap.innerHTML = bookmarksListHtml
+  if (event.target.classList.contains('js-load')) {
+    const folderId = event.target.getAttribute('data-folderId')
+    openGroup(folderId, data)
+  }
+  if (event.target.classList.contains('js-tab')) {
+    const targetTab = event.target.getAttribute('data-tab')
+    const allTabs = document.getElementsByClassName('js-tab')
+    const allWraps = document.getElementsByClassName('js-wrap')
+    const targetWrap = document.getElementsByClassName(targetTab)[0]
+    for (let tab of allTabs) {
+      tab.classList.remove('active')
+    }
+    for (let wrap of allWraps) {
+      wrap.classList.remove('active')
+    }
+    event.target.classList.add('active')
+    targetWrap.classList.add('active')
+  }
+  if (event.target.classList.contains('js-save-path')) {
+    const targetPath = pathInput.value
+    saveRootPath(targetPath)
+  }
+}
 
-  body.addEventListener('click', (event) => {
-    if (event.target.classList.contains('js-save')) {
-      const groupId = event.target.getAttribute('data-groupId')
-      saveGroup(groupId, data)
-    }
-    if (event.target.classList.contains('js-load')) {
-      const folderId = event.target.getAttribute('data-folderId')
-      openGroup(folderId, data)
-    }
-    if (event.target.classList.contains('js-tab')) {
-      const targetTab = event.target.getAttribute('data-tab')
-      const allTabs = document.getElementsByClassName('js-tab')
-      const allWraps = document.getElementsByClassName('js-wrap')
-      const targetWrap = document.getElementsByClassName(targetTab)[0]
-      for (let tab of allTabs) {
-        tab.classList.remove('active')
+const initExt = () => {
+  getData((data) => {
+    body.removeEventListener('click', eventsList, false)
+    console.log(data)
+
+    let groupsListHtml = ''
+    if (data.groupsArr && data.groupsArr.length > 0) {
+      for (let i = 0; data.groupsArr.length > i; i++) {
+        groupsListHtml += `<div class="list__item"><div class="list__item_save js-save" data-groupid="${
+          data.groupsArr[i].id
+        }">${
+          data.groupsArr[i].title ? data.groupsArr[i].title : 'NONAME'
+        }</div><div class="list__item_close js-close" data-groupid="${
+          data.groupsArr[i].id
+        }">X</div></div>`
       }
-      for (let wrap of allWraps) {
-        wrap.classList.remove('active')
+    }
+    groupsListWrap.innerHTML = groupsListHtml
+
+    let bookmarksListHtml = ''
+    if (data.bookmarksFoldersArr && data.bookmarksFoldersArr.length > 0) {
+      for (let i = 0; data.bookmarksFoldersArr.length > i; i++) {
+        bookmarksListHtml += `<div class="list__item"><div class="list__item_load js-load" data-folderId="${data.bookmarksFoldersArr[i].id}">${data.bookmarksFoldersArr[i].title}</div></div>`
       }
-      event.target.classList.add('active')
-      targetWrap.classList.add('active')
     }
-    if (event.target.classList.contains('js-save-path')) {
-      const targetPath = pathInput.value
-      saveRootPath(targetPath)
-    }
+    bookmarksListWrap.innerHTML = bookmarksListHtml
+
+    body.addEventListener('click', eventsList, false)
+    body.myData = data
   })
-})
+}
+
+initExt()

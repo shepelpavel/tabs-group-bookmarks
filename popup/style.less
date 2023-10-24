@@ -213,6 +213,18 @@ body {
       background-color: #353535;
     }
   }
+  .done {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 1px;
+    width: 0%;
+    background-color: #00ff00;
+    transition: 0.3s;
+    &.show {
+      width: 100%;
+    }
+  }
 }
 
 .content {
@@ -222,45 +234,52 @@ body {
   overflow-y: scroll;
   .list {
     &__item {
-      height: 30px;
+      width: 100%;
       display: flex;
-      align-items: center;
-      border: 1px solid #303030;
-      margin-bottom: 6px;
-      padding: 0 6px;
-      cursor: pointer;
-      transition: 0.3s;
-      background-color: #262626;
-      &.active {
-        background-color: #303030;
+      &_save,
+      &_load {
+        width: calc(100% - 32px);
+        height: 30px;
+        display: flex;
+        align-items: center;
+        border: 1px solid #303030;
+        margin-bottom: 6px;
+        padding: 0 6px;
+        cursor: pointer;
+        transition: 0.3s;
+        background-color: #262626;
+        &.active {
+          background-color: #303030;
+        }
+        &:hover {
+          background-color: #353535;
+        }
       }
-      &:hover {
-        background-color: #353535;
+      &_load {
+        width: 100%;
       }
-    }
-  }
-  .done {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    top: 0;
-    right: 0;
-    background-color: #00ff00;
-    border-radius: 24px;
-    display: none;
-    &::after {
-      content: '';
-      position: absolute;
-      width: 12px;
-      height: 6px;
-      border-left: 2px solid #000000;
-      border-bottom: 2px solid #000000;
-      transform: rotate(-45deg);
-      left: 5px;
-      top: 6px;
-    }
-    &.show {
-      display: block;
+      &_close {
+        width: 30px;
+        height: 30px;
+        margin-left: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #303030;
+        margin-bottom: 6px;
+        padding: 0;
+        cursor: pointer;
+        transition: 0.3s;
+        background-color: #262626;
+        &.active {
+          background-color: #303030;
+        }
+        &:hover {
+          border: 1px solid #880000;
+          background-color: rgba(255, 0, 0, 0.2);
+          color: #ff0000;
+        }
+      }
     }
   }
   .settings {
