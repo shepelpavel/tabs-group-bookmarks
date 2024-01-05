@@ -286,6 +286,10 @@ body {
     &_row {
       display: flex;
       align-items: center;
+      margin-bottom: 6px;
+      &:last-child {
+        margin-bottom: 0;
+      }
       label {
         width: 50%;
         padding-right: 6px;
@@ -296,6 +300,10 @@ body {
         border: 1px solid #444444;
         padding: 6px;
         width: 30%;
+        &[type='checkbox'] {
+          width: 13px;
+          margin-left: 0;
+        }
       }
       button {
         margin-left: 6px;

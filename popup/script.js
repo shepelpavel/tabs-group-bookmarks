@@ -12,6 +12,7 @@ const getData = (callback) => {
     bookmarksFoldersArr: [],
     targetFolderId: '',
     rootPath: 'TabsGroups',
+    autosave: 'off',
   }
 
   chrome.storage.local.get(['path']).then((result) => {
@@ -19,26 +20,31 @@ const getData = (callback) => {
       resData.rootPath = result.path
     }
     pathInput.value = resData.rootPath
-    chrome.tabGroups.query({}, (groups) => {
-      resData.groupsArr = groups
-      chrome.tabs.query({}, (tabs) => {
-        resData.tabsArr = tabs
-        chrome.bookmarks.search({ title: resData.rootPath }, (folder) => {
-          if (folder.length > 0) {
-            resData.targetFolderId = folder[0].id
-            getBookmarks(resData, (res) => {
-              resData = res
-              callback(resData)
-            })
-          } else {
-            chrome.bookmarks.create({ title: resData.rootPath }, (folder) => {
-              resData.targetFolderId = folder.id
+    chrome.storage.local.get(['autosave']).then((result) => {
+      if (result?.autosave) {
+        resData.autosave = result.autosave
+      }
+      chrome.tabGroups.query({}, (groups) => {
+        resData.groupsArr = groups
+        chrome.tabs.query({}, (tabs) => {
+          resData.tabsArr = tabs
+          chrome.bookmarks.search({ title: resData.rootPath }, (folder) => {
+            if (folder.length > 0) {
+              resData.targetFolderId = folder[0].id
               getBookmarks(resData, (res) => {
                 resData = res
                 callback(resData)
               })
-            })
-          }
+            } else {
+              chrome.bookmarks.create({ title: resData.rootPath }, (folder) => {
+                resData.targetFolderId = folder.id
+                getBookmarks(resData, (res) => {
+                  resData = res
+                  callback(resData)
+                })
+              })
+            }
+          })
         })
       })
     })
@@ -60,11 +66,11 @@ const getBookmarks = (data, callback) => {
 const saveGroup = (tabGroupId, data) => {
   const getNewFolderId = (name, callback) => {
     chrome.bookmarks.getSubTree(data.targetFolderId, (folder) => {
-      let chexkTargetFolder = folder[0].children?.filter(
+      let checkTargetFolder = folder[0].children?.filter(
         (childFold) => childFold.title == name,
       )
-      if (chexkTargetFolder.length > 0) {
-        chrome.bookmarks.removeTree(chexkTargetFolder[0].id, () => {
+      if (checkTargetFolder.length > 0) {
+        chrome.bookmarks.removeTree(checkTargetFolder[0].id, () => {
           chrome.bookmarks.create(
             { parentId: data.targetFolderId, title: name ? name : 'NONAME' },
             (folder) => {
@@ -156,6 +162,11 @@ const saveRootPath = (path) => {
     showDone()
   })
 }
+const saveAutosave = (autosave) => {
+  chrome.storage.local.set({ autosave: autosave }).then(() => {
+    showDone()
+  })
+}
 
 const eventsList = (event) => {
   var data = event.currentTarget.myData
@@ -189,6 +200,10 @@ const eventsList = (event) => {
     const targetPath = pathInput.value
     saveRootPath(targetPath)
   }
+  if (event.target.classList.contains('js-autosave')) {
+    const autosaveCheckbox = document.getElementById('autosave')
+    saveAutosave(autosaveCheckbox.checked ? 'on' : 'off')
+  }
 }
 
 const initExt = () => {
@@ -217,6 +232,13 @@ const initExt = () => {
       }
     }
     bookmarksListWrap.innerHTML = bookmarksListHtml
+
+    const autosaveCheckbox = document.getElementById('autosave')
+    if (data.autosave === 'on') {
+      autosaveCheckbox.checked = true
+    } else {
+      autosaveCheckbox.checked = false
+    }
 
     body.addEventListener('click', eventsList, false)
     body.myData = data
