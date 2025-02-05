@@ -11,7 +11,7 @@ const getData = (callback) => {
     tabsArr: [],
     bookmarksFoldersArr: [],
     targetFolderId: '',
-    rootPath: 'TabsGroups',
+    rootPath: 'Groups',
     autosave: 'off',
   }
 
@@ -168,6 +168,20 @@ const saveAutosave = (autosave) => {
   })
 }
 
+const searchFilter = (searchValue) => {
+  const allItems = document.getElementsByClassName('js-load')
+  for (let item of allItems) {
+    if (
+      item.textContent.toLowerCase().includes(searchValue.toLowerCase()) ||
+      searchValue.length < 1
+    ) {
+      item.closest('.list__item').classList.remove('hide')
+    } else {
+      item.closest('.list__item').classList.add('hide')
+    }
+  }
+}
+
 const eventsList = (event) => {
   var data = event.currentTarget.myData
   if (event.target.classList.contains('js-save')) {
@@ -204,6 +218,10 @@ const eventsList = (event) => {
     const autosaveCheckbox = document.getElementById('autosave')
     saveAutosave(autosaveCheckbox.checked ? 'on' : 'off')
   }
+  if (event.target.classList.contains('js-search')) {
+    const searchValue = document.getElementById('search').value
+    searchFilter(searchValue)
+  }
 }
 
 const initExt = () => {
@@ -225,13 +243,15 @@ const initExt = () => {
     }
     groupsListWrap.innerHTML = groupsListHtml
 
+    let searchHTML =
+      '<div class="list__search"><input type="text" id="search" class="js-search" /></div>'
     let bookmarksListHtml = ''
     if (data.bookmarksFoldersArr && data.bookmarksFoldersArr.length > 0) {
       for (let i = 0; data.bookmarksFoldersArr.length > i; i++) {
         bookmarksListHtml += `<div class="list__item"><div class="list__item_load js-load" data-folderId="${data.bookmarksFoldersArr[i].id}">${data.bookmarksFoldersArr[i].title}</div></div>`
       }
     }
-    bookmarksListWrap.innerHTML = bookmarksListHtml
+    bookmarksListWrap.innerHTML = searchHTML + bookmarksListHtml
 
     const autosaveCheckbox = document.getElementById('autosave')
     if (data.autosave === 'on') {
@@ -241,7 +261,9 @@ const initExt = () => {
     }
 
     body.addEventListener('click', eventsList, false)
+    body.addEventListener('input', eventsList, false)
     body.myData = data
+    searchFilter('')
   })
 }
 
