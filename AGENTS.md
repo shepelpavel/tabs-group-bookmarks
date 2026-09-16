@@ -3,7 +3,7 @@
 Chrome-расширение (Manifest V3), адаптированное также под Firefox, для
 управления группами вкладок: сохраняет группы вкладок в закладки и открывает
 их обратно группами. Работает в хром-подобных браузерах (Chrome, Edge, Yandex,
-Vivaldi, Opera) и Firefox 139+.
+Vivaldi, Opera) и Firefox 142+.
 
 ## Структура
 
@@ -11,7 +11,8 @@ Vivaldi, Opera) и Firefox 139+.
 manifest.json       — MV3-манифест, кросс-браузерный:
                       background.scripts (Firefox event page) +
                       background.service_worker (Chrome); gecko.id,
-                      strict_min_version 139.0. permissions: tabs,
+                      strict_min_version 142.0,
+                      data_collection_permissions: ["none"]. permissions: tabs,
                       tabGroups, bookmarks, storage, alarms
 background.js       — service worker: автосохранение всех групп по chrome.alarms (раз в минуту)
 popup/
@@ -89,7 +90,8 @@ storage → tabGroups.query → tabs.query → bookmarks.search → getSubTree.
   поддерживается); Chrome 121+ молча игнорирует `scripts` — dual-запись
   сохранять при правках манифеста.
 - Firefox: API групп (`tabs.group`, `tabGroups.query/update`) идентичны
-  Chrome с 139; min version поднимать только вместе с проверкой новых API.
+  Chrome с 139; `data_collection_permissions` поддержан с 140 (десктоп) /
+  142 (Android) — min version поднимать только вместе с проверкой новых API.
 - `bookmarks.search({ title })` возвращает первый результат по совпадению
   имени — пользовательские папки с тем же именем в других местах закладок
   могут перехватить поиск.
