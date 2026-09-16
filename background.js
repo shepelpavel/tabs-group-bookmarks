@@ -4,7 +4,7 @@ const getData = (callback) => {
     tabsArr: [],
     bookmarksFoldersArr: [],
     targetFolderId: '',
-    rootPath: 'TabsGroups',
+    rootPath: 'Groups',
   }
 
   chrome.storage.local.get(['path']).then((result) => {
@@ -88,6 +88,49 @@ const saveGroup = (tabGroupId, data) => {
     })
   }
 }
+
+const openGroup = (folderId, rootPath) => {
+  chrome.bookmarks.search({ title: rootPath }, (rootFolder) => {
+    if (rootFolder.length === 0) {
+      return
+    }
+    chrome.bookmarks.getSubTree(rootFolder[0].id, (subTree) => {
+      const children = (subTree[0]?.children || []).filter(
+        (child) => !child.url,
+      )
+      const targetFolder = children.find((folder) => folder.id == folderId)
+      if (!targetFolder) {
+        return
+      }
+      const tabsGroupArr = []
+      const bookmarks = targetFolder.children.filter((child) => child.url)
+      for (let i = 0; bookmarks.length > i; i++) {
+        chrome.tabs.create(
+          { url: bookmarks[i].url, active: false },
+          (tab) => {
+            tabsGroupArr.push(tab.id)
+            if (bookmarks.length == i + 1) {
+              chrome.tabs.group({ tabIds: tabsGroupArr }, (groupId) => {
+                chrome.tabGroups.update(
+                  groupId,
+                  { title: targetFolder.title },
+                  () => {},
+                )
+              })
+            }
+          },
+        )
+      }
+    })
+  })
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'openGroup') {
+    openGroup(message.folderId, message.rootPath)
+    sendResponse({ ok: true })
+  }
+})
 
 const autoSave = () => {
   chrome.storage.local.get(['autosave']).then((result) => {

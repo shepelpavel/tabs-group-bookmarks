@@ -123,29 +123,18 @@ const closeGroup = (tabGroupId, data) => {
 }
 
 const openGroup = (folderId, data) => {
-  let tabsGroupArr = []
   targetFolderObj = data.bookmarksFoldersArr.find(
     (folder) => folder.id == folderId,
   )
-  for (let i = 0; targetFolderObj.children.length > i; i++) {
-    chrome.tabs.create(
-      { url: targetFolderObj.children[i].url, active: false },
-      (tab) => {
-        tabsGroupArr.push(tab.id)
-        if (targetFolderObj.children.length == i + 1) {
-          chrome.tabs.group({ tabIds: tabsGroupArr }, (groupId) => {
-            chrome.tabGroups.update(
-              groupId,
-              { title: targetFolderObj.title },
-              () => {
-                showDone()
-              },
-            )
-          })
-        }
-      },
-    )
+  if (!targetFolderObj) {
+    return
   }
+  chrome.runtime.sendMessage(
+    { action: 'openGroup', folderId: folderId, rootPath: data.rootPath },
+    () => {
+      showDone()
+    },
+  )
 }
 
 const showDone = () => {
