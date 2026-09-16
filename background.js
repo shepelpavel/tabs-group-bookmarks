@@ -1,3 +1,5 @@
+const groupsSupported = () => !!chrome.tabGroups && !!chrome.tabs.group
+
 const getData = (callback) => {
   let resData = {
     groupsArr: [],
@@ -5,11 +7,32 @@ const getData = (callback) => {
     bookmarksFoldersArr: [],
     targetFolderId: '',
     rootPath: 'Groups',
+    groupsSupported: groupsSupported(),
   }
 
   chrome.storage.local.get(['path']).then((result) => {
     if (result?.path) {
       resData.rootPath = result.path
+    }
+    if (!resData.groupsSupported) {
+      chrome.bookmarks.search({ title: resData.rootPath }, (folder) => {
+        if (folder.length > 0) {
+          resData.targetFolderId = folder[0].id
+          getBookmarks(resData, (res) => {
+            resData = res
+            callback(resData)
+          })
+        } else {
+          chrome.bookmarks.create({ title: resData.rootPath }, (folder) => {
+            resData.targetFolderId = folder.id
+            getBookmarks(resData, (res) => {
+              resData = res
+              callback(resData)
+            })
+          })
+        }
+      })
+      return
     }
     chrome.tabGroups.query({}, (groups) => {
       resData.groupsArr = groups
@@ -50,6 +73,9 @@ const getBookmarks = (data, callback) => {
 }
 
 const saveGroup = (tabGroupId, data) => {
+  if (!data.groupsSupported) {
+    return
+  }
   const getNewFolderId = (name, callback) => {
     chrome.bookmarks.getSubTree(data.targetFolderId, (folder) => {
       let checkTargetFolder = folder[0].children?.filter(
@@ -109,7 +135,7 @@ const openGroup = (folderId, rootPath) => {
           { url: bookmarks[i].url, active: false },
           (tab) => {
             tabsGroupArr.push(tab.id)
-            if (bookmarks.length == i + 1) {
+            if (groupsSupported() && bookmarks.length == i + 1) {
               chrome.tabs.group({ tabIds: tabsGroupArr }, (groupId) => {
                 chrome.tabGroups.update(
                   groupId,
@@ -134,7 +160,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 const autoSave = () => {
   chrome.storage.local.get(['autosave']).then((result) => {
-    if (result?.autosave && result?.autosave === 'on') {
+    if (result?.autosave && result?.autosave === 'on' && groupsSupported()) {
       getData((data) => {
         if (data) {
           data.groupsArr.forEach((group) => {

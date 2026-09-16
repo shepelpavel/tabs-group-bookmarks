@@ -203,6 +203,9 @@ body {
 .tabs__item:hover {
   background-color: #353535;
 }
+.tabs__item.hide {
+  display: none;
+}
 .tabs .done {
   position: absolute;
   left: 0;

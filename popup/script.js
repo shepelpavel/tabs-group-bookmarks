@@ -5,6 +5,8 @@ const settingsWrap = document.getElementsByClassName('settings')[0]
 const doneBlock = document.getElementsByClassName('done')[0]
 const pathInput = document.getElementById('path')
 
+const groupsSupported = () => !!chrome.tabGroups && !!chrome.tabs.group
+
 const getData = (callback) => {
   let resData = {
     groupsArr: [],
@@ -13,6 +15,7 @@ const getData = (callback) => {
     targetFolderId: '',
     rootPath: 'Groups',
     autosave: 'off',
+    groupsSupported: groupsSupported(),
   }
 
   chrome.storage.local.get(['path']).then((result) => {
@@ -23,6 +26,26 @@ const getData = (callback) => {
     chrome.storage.local.get(['autosave']).then((result) => {
       if (result?.autosave) {
         resData.autosave = result.autosave
+      }
+      if (!resData.groupsSupported) {
+        chrome.bookmarks.search({ title: resData.rootPath }, (folder) => {
+          if (folder.length > 0) {
+            resData.targetFolderId = folder[0].id
+            getBookmarks(resData, (res) => {
+              resData = res
+              callback(resData)
+            })
+          } else {
+            chrome.bookmarks.create({ title: resData.rootPath }, (folder) => {
+              resData.targetFolderId = folder.id
+              getBookmarks(resData, (res) => {
+                resData = res
+                callback(resData)
+              })
+            })
+          }
+        })
+        return
       }
       chrome.tabGroups.query({}, (groups) => {
         resData.groupsArr = groups
@@ -64,6 +87,9 @@ const getBookmarks = (data, callback) => {
 }
 
 const saveGroup = (tabGroupId, data) => {
+  if (!data.groupsSupported) {
+    return
+  }
   const getNewFolderId = (name, callback) => {
     chrome.bookmarks.getSubTree(data.targetFolderId, (folder) => {
       let checkTargetFolder = folder[0].children?.filter(
@@ -109,6 +135,9 @@ const saveGroup = (tabGroupId, data) => {
 }
 
 const closeGroup = (tabGroupId, data) => {
+  if (!data.groupsSupported) {
+    return
+  }
   let tabsArr = []
   chrome.tabs.query({}, (tabs) => {
     tabs.map((tab) => {
@@ -218,6 +247,14 @@ const initExt = () => {
     body.removeEventListener('click', eventsList, false)
     console.log(data)
 
+    const saveTab = document.querySelector('.tabs__item[data-tab="groups"]')
+    if (saveTab) {
+      saveTab.classList.toggle('hide', !data.groupsSupported)
+    }
+    if (!data.groupsSupported) {
+      document.querySelector('.tabs__item[data-tab="bookmarks"]').click()
+    }
+
     groupsListWrap.replaceChildren()
     if (data.groupsArr && data.groupsArr.length > 0) {
       for (let i = 0; data.groupsArr.length > i; i++) {
@@ -271,6 +308,8 @@ const initExt = () => {
     } else {
       autosaveCheckbox.checked = false
     }
+    const autosaveRow = autosaveCheckbox.closest('.settings_row')
+    autosaveRow.classList.toggle('hide', !data.groupsSupported)
 
     body.addEventListener('click', eventsList, false)
     body.addEventListener('input', eventsList, false)
