@@ -218,29 +218,52 @@ const initExt = () => {
     body.removeEventListener('click', eventsList, false)
     console.log(data)
 
-    let groupsListHtml = ''
+    groupsListWrap.replaceChildren()
     if (data.groupsArr && data.groupsArr.length > 0) {
       for (let i = 0; data.groupsArr.length > i; i++) {
-        groupsListHtml += `<div class="list__item"><div class="list__item_save js-save" data-groupid="${
-          data.groupsArr[i].id
-        }">${
-          data.groupsArr[i].title ? data.groupsArr[i].title : 'NONAME'
-        }</div><div class="list__item_close js-close" data-groupid="${
-          data.groupsArr[i].id
-        }">X</div></div>`
+        const item = document.createElement('div')
+        item.className = 'list__item'
+
+        const saveBtn = document.createElement('div')
+        saveBtn.className = 'list__item_save js-save'
+        saveBtn.setAttribute('data-groupid', data.groupsArr[i].id)
+        saveBtn.textContent = data.groupsArr[i].title
+          ? data.groupsArr[i].title
+          : 'NONAME'
+
+        const closeBtn = document.createElement('div')
+        closeBtn.className = 'list__item_close js-close'
+        closeBtn.setAttribute('data-groupid', data.groupsArr[i].id)
+        closeBtn.textContent = 'X'
+
+        item.append(saveBtn, closeBtn)
+        groupsListWrap.append(item)
       }
     }
-    groupsListWrap.innerHTML = groupsListHtml
 
-    let searchHTML =
-      '<div class="list__search"><input type="text" id="search" class="js-search" /></div>'
-    let bookmarksListHtml = ''
+    const searchWrap = document.createElement('div')
+    searchWrap.className = 'list__search'
+    const searchInput = document.createElement('input')
+    searchInput.type = 'text'
+    searchInput.id = 'search'
+    searchInput.className = 'js-search'
+    searchWrap.append(searchInput)
+
+    bookmarksListWrap.replaceChildren(searchWrap)
     if (data.bookmarksFoldersArr && data.bookmarksFoldersArr.length > 0) {
       for (let i = 0; data.bookmarksFoldersArr.length > i; i++) {
-        bookmarksListHtml += `<div class="list__item"><div class="list__item_load js-load" data-folderId="${data.bookmarksFoldersArr[i].id}">${data.bookmarksFoldersArr[i].title}</div></div>`
+        const item = document.createElement('div')
+        item.className = 'list__item'
+
+        const loadBtn = document.createElement('div')
+        loadBtn.className = 'list__item_load js-load'
+        loadBtn.setAttribute('data-folderId', data.bookmarksFoldersArr[i].id)
+        loadBtn.textContent = data.bookmarksFoldersArr[i].title
+
+        item.append(loadBtn)
+        bookmarksListWrap.append(item)
       }
     }
-    bookmarksListWrap.innerHTML = searchHTML + bookmarksListHtml
 
     const autosaveCheckbox = document.getElementById('autosave')
     if (data.autosave === 'on') {
