@@ -100,7 +100,11 @@ const saveGroup = (tabGroupId, data) => {
       }
     })
   }
-  const selectedTabs = data.tabsArr.filter((tab) => tab.groupId == tabGroupId)
+  // Firefox: tabs.query отдаёт вкладки в порядке недавнего использования,
+  // сортируем по позиции в окне, иначе закладки сохраняются задом наперёд
+  const selectedTabs = data.tabsArr
+    .filter((tab) => tab.groupId == tabGroupId)
+    .sort((a, b) => a.index - b.index)
   const selectedGroup = data.groupsArr.find((group) => group.id == tabGroupId)
   if (selectedTabs.length > 0) {
     getNewFolderId(selectedGroup.title, (id) => {
