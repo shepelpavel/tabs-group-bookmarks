@@ -108,13 +108,24 @@ const saveGroup = (tabGroupId, data) => {
   const selectedGroup = data.groupsArr.find((group) => group.id == tabGroupId)
   if (selectedTabs.length > 0) {
     getNewFolderId(selectedGroup.title, (id) => {
-      for (let i = 0; selectedTabs.length > i; i++) {
-        chrome.bookmarks.create({
-          parentId: id,
-          title: selectedTabs[i].title,
-          url: selectedTabs[i].url,
-        })
+      // Firefox: при массовом создании закладок порядок в папке зависит от
+      // порядка завершения операций, создаём последовательно по цепочке
+      const createNext = (i) => {
+        if (selectedTabs.length <= i) {
+          return
+        }
+        chrome.bookmarks.create(
+          {
+            parentId: id,
+            title: selectedTabs[i].title,
+            url: selectedTabs[i].url,
+          },
+          () => {
+            createNext(i + 1)
+          },
+        )
       }
+      createNext(0)
     })
   }
 }
